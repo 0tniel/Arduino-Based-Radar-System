@@ -18,20 +18,20 @@ void setup() {
 }
 
 void loop() {
-  // rotates the servo motor from 15 to 165 degrees
-  for(int i = 15; i <= 165; i++) {
+  // Rotates the servo motor from 15 to 165 degrees
+  for (int i = 15; i <= 165; i++) {
     myServo.write(i);
     delay(30);
-    distance = calculateDistance(); // Calls a function for calculating the distance measured by the Ultrasonic sensor for each degree
+    distance = calculateDistance();
 
-    Serial.print(i);           // Sends the current degree into the Serial Port
-    Serial.print(",");         // Sends addition character right next to the previous value needed later in the Processing IDE for indexing
-    Serial.print(distance);    // Sends the distance value into the Serial Port
-    Serial.print(".");         // Sends addition character right next to the previous value needed later in the Processing IDE for indexing
+    Serial.print(i);        // Sends the current degree into the Serial Port
+    Serial.print(",");      // Separator character for Processing IDE indexing
+    Serial.print(distance); // Sends the distance value into the Serial Port
+    Serial.print(".");      // Terminator character for Processing IDE indexing
   }
 
   // Repeats the previous lines from 165 to 15 degrees
-  for(int i = 165; i > 15; i--) {
+  for (int i = 165; i > 15; i--) {
     myServo.write(i);
     delay(30);
     distance = calculateDistance();
@@ -46,11 +46,11 @@ void loop() {
 int calculateDistance() {
   digitalWrite(trigPin, LOW);
   delayMicroseconds(2);
-  // Sets the trigPin on HIGH state for 10 micro seconds
+  // Sets the trigPin on HIGH state for 10 microseconds
   digitalWrite(trigPin, HIGH);
   delayMicroseconds(10);
   digitalWrite(trigPin, LOW);
-  duration = pulseIn(echoPin, HIGH); // Reads the echoPin, returns the sound wave travel time in microseconds
+  duration = pulseIn(echoPin, HIGH); // Reads the echoPin, returns sound wave travel time in microseconds
   distance = duration * 0.034 / 2;
   return distance;
 }
