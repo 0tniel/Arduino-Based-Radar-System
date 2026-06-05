@@ -1,41 +1,52 @@
 import processing.serial.*;
+import java.awt.event.KeyEvent;
+import java.io.IOException;
 
 Serial myPort;
-String data    = "";
-int iAngle     = 0;
-int iDistance  = 0;
+String angle    = "";
+String distance = "";
+String data     = "";
+String noObject;
 float pixsDistance;
+int iAngle, iDistance;
+int index1 = 0;
+int index2 = 0;
+PFont orcFont;
 
 void setup() {
-  size(1200, 700);
+  size(1920, 1080); // *** CHANGE THIS TO YOUR SCREEN RESOLUTION ***
   smooth();
-  myPort = new Serial(this, "COM3", 9600); // Change COM port if needed
+  myPort = new Serial(this, "COM4", 9600); // Change COM4 to your port
   myPort.bufferUntil('.');
+  orcFont = loadFont("OCRAExtended-30.vlw");
 }
 
 void draw() {
-  // Radar fade effect
-  fill(0, 20);
-  noStroke();
-  rect(0, 0, width, height);
+  fill(98, 245, 31);
+  textFont(orcFont);
 
+  // Simulating motion blur and slow fade of the moving line
+  noStroke();
+  fill(0, 4);
+  rect(0, 0, width, height - height * 0.065);
+
+  fill(98, 245, 31); // green color
   drawRadar();
-  drawSweep();
+  drawLine();
   drawObject();
-  drawInfo();
+  drawText();
 }
 
 void serialEvent(Serial myPort) {
-  String incoming = myPort.readStringUntil('.');
-  if (incoming != null) {
-    incoming = trim(incoming);
-    incoming = incoming.substring(0, incoming.length() - 1);
-    int commaIndex = incoming.indexOf(',');
-    if (commaIndex > 0) {
-      iAngle    = int(incoming.substring(0, commaIndex));
-      iDistance = int(incoming.substring(commaIndex + 1));
-    }
-  }
+  data = myPort.readStringUntil('.');
+  data = data.substring(0, data.length() - 1);
+
+  index1   = data.indexOf(",");
+  angle    = data.substring(0, index1);
+  distance = data.substring(index1 + 1, data.length());
+
+  iAngle    = int(angle);
+  iDistance = int(distance);
 }
 
 // ===================================================
@@ -43,44 +54,25 @@ void serialEvent(Serial myPort) {
 // ===================================================
 void drawRadar() {
   pushMatrix();
-  translate(width / 2, height - 40);
-  stroke(0, 255, 0);
-  strokeWeight(1);
+  translate(width / 2, height - height * 0.074);
   noFill();
+  strokeWeight(2);
+  stroke(98, 245, 31);
 
   // Distance arcs
-  arc(0, 0, 200, 200, PI, TWO_PI);
-  arc(0, 0, 400, 400, PI, TWO_PI);
-  arc(0, 0, 600, 600, PI, TWO_PI);
-  arc(0, 0, 800, 800, PI, TWO_PI);
+  arc(0, 0, (width - width * 0.0625), (width - width * 0.0625), PI, TWO_PI);
+  arc(0, 0, (width - width * 0.27),   (width - width * 0.27),   PI, TWO_PI);
+  arc(0, 0, (width - width * 0.479),  (width - width * 0.479),  PI, TWO_PI);
+  arc(0, 0, (width - width * 0.687),  (width - width * 0.687),  PI, TWO_PI);
 
   // Angle lines
-  for (int angle = 30; angle <= 150; angle += 30) {
-    line(0, 0,
-         400 * cos(radians(angle)),
-        -400 * sin(radians(angle)));
-  }
-
-  // Base line
-  line(-400, 0, 400, 0);
-  popMatrix();
-}
-
-// ===================================================
-// SWEEP LINE
-// ===================================================
-void drawSweep() {
-  pushMatrix();
-  translate(width / 2, height - 40);
-
-  for (int i = 0; i < 8; i++) {
-    stroke(0, 255, 0, 255 - i * 30);
-    strokeWeight(3);
-    float a = radians(iAngle - i * 4);
-    line(0, 0,
-         400 * cos(a),
-        -400 * sin(a));
-  }
+  line(-width / 2, 0, width / 2, 0);
+  line(0, 0, (-width / 2) * cos(radians(30)),  (-width / 2) * sin(radians(30)));
+  line(0, 0, (-width / 2) * cos(radians(60)),  (-width / 2) * sin(radians(60)));
+  line(0, 0, (-width / 2) * cos(radians(90)),  (-width / 2) * sin(radians(90)));
+  line(0, 0, (-width / 2) * cos(radians(120)), (-width / 2) * sin(radians(120)));
+  line(0, 0, (-width / 2) * cos(radians(150)), (-width / 2) * sin(radians(150)));
+  line((-width / 2) * cos(radians(30)), 0, width / 2, 0);
   popMatrix();
 }
 
@@ -88,55 +80,94 @@ void drawSweep() {
 // OBJECT DISPLAY
 // ===================================================
 void drawObject() {
-  if (iDistance > 40) return;
-
   pushMatrix();
-  translate(width / 2, height - 40);
+  translate(width / 2, height - height * 0.074);
+  strokeWeight(9);
+  stroke(255, 10, 10); // red color
+  pixsDistance = iDistance * ((height - height * 0.1666) * 0.025); // cm to pixels
+  if (iDistance < 40) {
+    line(
+      pixsDistance * cos(radians(iAngle)),
+      -pixsDistance * sin(radians(iAngle)),
+      (width - width * 0.505) * cos(radians(iAngle)),
+      -(width - width * 0.505) * sin(radians(iAngle))
+    );
+  }
+  popMatrix();
+}
 
-  pixsDistance = map(iDistance, 0, 40, 0, 400);
-  float x =  pixsDistance * cos(radians(iAngle));
-  float y = -pixsDistance * sin(radians(iAngle));
-
-  fill(255, 50, 50);
-  noStroke();
-  ellipse(x, y, 14, 14);
+// ===================================================
+// SWEEP LINE
+// ===================================================
+void drawLine() {
+  pushMatrix();
+  strokeWeight(9);
+  stroke(30, 250, 60);
+  translate(width / 2, height - height * 0.074);
+  line(0, 0,
+       (height - height * 0.12) * cos(radians(iAngle)),
+      -(height - height * 0.12) * sin(radians(iAngle)));
   popMatrix();
 }
 
 // ===================================================
 // TEXT INFORMATION
 // ===================================================
-void drawInfo() {
-  // Status bar background
-  fill(0);
+void drawText() {
+  pushMatrix();
+
+  noObject = (iDistance > 40) ? "Out of Range" : "In Range";
+
+  fill(0, 0, 0);
   noStroke();
-  rect(0, height - 40, width, 40);
+  rect(0, height - height * 0.0648, width, height);
 
-  fill(0, 255, 0);
-  textSize(18);
+  fill(98, 245, 31);
+  textSize(25);
+  text("10cm", width - width * 0.3854, height - height * 0.0833);
+  text("20cm", width - width * 0.281,  height - height * 0.0833);
+  text("30cm", width - width * 0.177,  height - height * 0.0833);
+  text("40cm", width - width * 0.0729, height - height * 0.0833);
 
-  // Status bar text
-  text("Arduino Radar",                                      10,  height - 15);
-  text("Angle: " + iAngle + "°",                           250,  height - 15);
+  textSize(40);
+  text("Object: " + noObject,          width - width * 0.875, height - height * 0.0277);
+  text("Angle: "  + iAngle + " °",     width - width * 0.48,  height - height * 0.0277);
+  text("Distance: ",                   width - width * 0.26,  height - height * 0.0277);
+  if (iDistance < 40) {
+    text("        " + iDistance + " cm", width - width * 0.225, height - height * 0.0277);
+  }
 
-  if (iDistance <= 40)
-    text("Distance: " + iDistance + " cm",                 500,  height - 15);
-  else
-    text("Distance: Out of Range",                         500,  height - 15);
+  textSize(25);
+  fill(98, 245, 60);
 
-  String status = (iDistance <= 40) ? "In Range" : "Out of Range";
-  text(status,                                             850,  height - 15);
+  translate((width - width * 0.4994) + width / 2 * cos(radians(30)),
+            (height - height * 0.0907) - width / 2 * sin(radians(30)));
+  rotate(-radians(-60));
+  text("30°", 0, 0);
+  resetMatrix();
 
-  // Degree labels
-  text("30°",  110,  260);
-  text("60°",  280,  90);
-  text("90°",  585,  40);
-  text("120°", 890,  90);
-  text("150°", 1060, 260);
+  translate((width - width * 0.503) + width / 2 * cos(radians(60)),
+            (height - height * 0.0888) - width / 2 * sin(radians(60)));
+  rotate(-radians(-30));
+  text("60°", 0, 0);
+  resetMatrix();
 
-  // Distance labels
-  text("10cm", 650, height - 80);
-  text("20cm", 750, height - 80);
-  text("30cm", 850, height - 80);
-  text("40cm", 950, height - 80);
+  translate((width - width * 0.507) + width / 2 * cos(radians(90)),
+            (height - height * 0.0833) - width / 2 * sin(radians(90)));
+  rotate(radians(0));
+  text("90°", 0, 0);
+  resetMatrix();
+
+  translate(width - width * 0.513 + width / 2 * cos(radians(120)),
+            (height - height * 0.07129) - width / 2 * sin(radians(120)));
+  rotate(radians(-30));
+  text("120°", 0, 0);
+  resetMatrix();
+
+  translate((width - width * 0.5104) + width / 2 * cos(radians(150)),
+            (height - height * 0.0574) - width / 2 * sin(radians(150)));
+  rotate(radians(-60));
+  text("150°", 0, 0);
+
+  popMatrix();
 }
