@@ -1,7 +1,5 @@
 # Ultrasonic Radar System Using Arduino
 
-![Radar Output](Radar_Output_UltrasonicSensor.png)
-
 ## About
 
 This project demonstrates a real-time radar system using an Arduino Uno, HC-SR04 Ultrasonic Sensor, and SG90 Servo Motor. Distance measurements are collected by the ultrasonic sensor and visualized through a Processing-based radar interface.
